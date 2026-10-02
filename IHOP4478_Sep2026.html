@@ -1,0 +1,2217 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark"><head><meta name="referrer" content="strict-origin-when-cross-origin"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'nonce-required' 'strict-dynamic' https://cdn.jsdelivr.net/npm/ https://cdn.tailwindcss.com https://unpkg.com/lucide; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net/npm/ https://copilot.microsoft.com; worker-src 'self' blob:; style-src 'unsafe-inline' 'self' https://fonts.googleapis.com/css2 https://cdn.jsdelivr.net/npm/; img-src 'self' data: blob: *.mm.bing.net th.bing.com cdn.tailwindcss.com copilot.microsoft.com *.tile.openstreetmap.org https://cdn.jsdelivr.net/npm/; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; media-src 'self' blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests"><style>
+._nav-link-tooltip {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  max-width: min(80%, 600px);
+  padding: 4px 8px;
+  background: rgba(32, 33, 36, 0.88);
+  color: #e8eaed;
+  font: 12px/16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-top-right-radius: 4px;
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  box-sizing: border-box;
+}
+._nav-link-tooltip._visible {
+  opacity: 1;
+}
+@media (prefers-color-scheme: light) {
+  ._nav-link-tooltip {
+    background: rgba(241, 243, 244, 0.92);
+    color: #202124;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+  }
+}
+</style>
+<script nonce="">
+(function() {
+  // Helper: check if a raw href is an external URL (http/https)
+  // Hash links (#section), relative paths (/page), mailto:, tel:, etc. are NOT external
+  function _isExternalHref(rawHref) {
+    if (!rawHref) return false;
+    var h = rawHref.trim().toLowerCase();
+    // onejs-sdl-disable-next-line no-insecure-url -- detects and upgrades user-provided HTTP links
+    return h.startsWith('http://') || h.startsWith('https://') || h.startsWith('//');
+  }
+
+  // --- Link hover URL preview tooltip ---
+  var _tooltip = document.createElement('div');
+  _tooltip.className = '_nav-link-tooltip';
+  function _ensureTooltipMounted() {
+    if (!_tooltip.parentNode) {
+      (document.body || document.documentElement).appendChild(_tooltip);
+    }
+  }
+
+  document.addEventListener('mouseover', function(event) {
+    var el = event.target;
+    while (el && el.tagName !== 'A') {
+      el = el.parentElement;
+    }
+    if (!el) return;
+    var rawHref = el.getAttribute('href');
+    if (!rawHref || rawHref.startsWith('javascript:')) return;
+    _ensureTooltipMounted();
+    // Show raw href for clean display (avoids blob: URL noise)
+    _tooltip.textContent = rawHref;
+    _tooltip.classList.add('_visible');
+  }, true);
+
+  document.addEventListener('mouseout', function(event) {
+    var el = event.target;
+    while (el && el.tagName !== 'A') {
+      el = el.parentElement;
+    }
+    if (!el) return;
+    _tooltip.classList.remove('_visible');
+  }, true);
+
+  // --- Intercept anchor tag clicks ---
+  document.addEventListener('click', function(event) {
+    var target = event.target;
+    while (target && target.tagName !== 'A') {
+      target = target.parentElement;
+    }
+    if (!target) return;
+
+    var rawHref = target.getAttribute('href');
+    if (!rawHref || rawHref.startsWith('javascript:')) return;
+
+    // Hash links: Ctrl/Cmd+click to scroll to target, plain click places cursor
+    if (rawHref.startsWith('#')) {
+      if (event.ctrlKey || event.metaKey) {
+        var targetId = rawHref.substring(1);
+        if (targetId) {
+          var targetEl = document.getElementById(targetId) || document.getElementsByName(targetId)[0];
+          if (targetEl) {
+            event.preventDefault();
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }
+      return;
+    }
+
+    // Only intercept external links (http/https)
+    if (!_isExternalHref(rawHref)) return;
+
+    // Allow download links to proceed natively instead of intercepting them.
+    // The 'download' attribute signals the browser to save the file rather than navigate.
+    if (target.hasAttribute('download')) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    window.parent.postMessage({
+      type: 'navigate-link',
+      payload: {
+        url: target.href || rawHref,
+        target: target.target || undefined
+      },
+      timestamp: Date.now()
+    }, '*');
+  }, true);
+
+  // --- Intercept window.open calls ---
+  var _origOpen = window.open;
+  window.open = function(url, target, features) {
+    if (!url) return null;
+    var urlStr = String(url);
+
+    // Only intercept external URLs (http/https)
+    if (!_isExternalHref(urlStr)) {
+      return _origOpen.call(window, url, target, features);
+    }
+
+    var resolvedUrl;
+    try {
+      resolvedUrl = new URL(urlStr, window.location.href).href;
+    } catch (e) {
+      resolvedUrl = urlStr;
+    }
+
+    window.parent.postMessage({
+      type: 'navigate-link',
+      payload: {
+        url: resolvedUrl,
+        target: target || '_blank'
+      },
+      timestamp: Date.now()
+    }, '*');
+    return null;
+  };
+})();
+</script>
+      <script nonce="">
+        (function() {
+          if (typeof window !== 'undefined' && window.trustedTypes && window.trustedTypes.createPolicy) {
+            try {
+              window.trustedTypes.createPolicy('default', {
+                createHTML: function(input) { return input; },
+                createScript: function(input) { return input; },
+                createScriptURL: function(input) { return input; }
+              });
+            } catch (e) {
+              // Policy may already exist — ignore
+            }
+          }
+        })();
+      </script>
+      <script nonce="">
+        (function() {
+          const _0x1a2b = {
+            log: console.log,
+            info: console.info,
+            warn: console.warn,
+            error: console.error,
+            debug: console.debug
+          };
+
+          function _0x3c4d(e, t, n) {
+            try {
+              const o = {
+                type: 'iframe-console-log',
+                payload: {
+                  level: e,
+                  message: String(t),
+                  args: n.map(e => {
+                    try {
+                      return typeof e === 'object' ? JSON.stringify(e, null, 2) : String(e);
+                    } catch (e) {
+                      return '[Circular or Non-serializable]';
+                    }
+                  }),
+                  timestamp: Date.now(),
+                  stackTrace: e === 'error' ? new Error().stack : undefined
+                }
+              };
+
+              window.parent.postMessage(o, '*');
+            } catch (e) {
+              _0x1a2b[e].apply(console, [t, ...n]);
+            }
+          }
+
+          console.log = function(...args) {
+            _0x1a2b.log.apply(console, args);
+            _0x3c4d('log', args[0] || '', args.slice(1));
+          };
+
+          console.info = function(...args) {
+            _0x1a2b.info.apply(console, args);
+            _0x3c4d('info', args[0] || '', args.slice(1));
+          };
+
+          console.warn = function(...args) {
+            _0x1a2b.warn.apply(console, args);
+            _0x3c4d('warn', args[0] || '', args.slice(1));
+          };
+
+          console.error = function(...args) {
+            _0x1a2b.error.apply(console, args);
+            _0x3c4d('error', args[0] || '', args.slice(1));
+          };
+
+          console.debug = function(...args) {
+            _0x1a2b.debug.apply(console, args);
+            _0x3c4d('debug', args[0] || '', args.slice(1));
+          };
+
+          window.addEventListener('error', function(event) {
+            _0x3c4d('error', event.message, [
+              'Error in ' + event.filename + ':' + event.lineno + ':' + event.colno,
+              event.error ? event.error.stack : ''
+            ]);
+          });
+
+          window.addEventListener('unhandledrejection', function(event) {
+            _0x3c4d('error', 'Unhandled Promise Rejection', [
+              event.reason ? String(event.reason) : 'Unknown reason'
+            ]);
+          });
+
+          window.addEventListener('securitypolicyviolation', function(event) {
+            _0x3c4d('error', 'CSP Violation: ' + event.effectiveDirective, [
+              'blockedURI: ' + event.blockedURI,
+              'violatedDirective: ' + event.violatedDirective,
+              'originalPolicy: ' + event.originalPolicy,
+              'disposition: ' + event.disposition,
+              'documentURI: ' + event.documentURI
+            ]);
+          });
+
+          var _llmRequestHandlers = {};
+
+          window._useLLM = function(name, params) {
+            const requestId = Math.random().toString(36).slice(2);
+            const p = new Promise((resolve) => {
+              _llmRequestHandlers[requestId] = resolve;
+            });
+
+            const llmMsg = {
+              type: "use-llm",
+              requestId: requestId,
+              timestamp: Date.now(),
+              payload: {
+                name: name,
+                params: params,
+              },
+            };
+            window.parent.postMessage(llmMsg, '*');
+
+            return p;
+          };
+
+          window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'update-theme') {
+              const theme = event.data.payload?.theme;
+              if (theme === 'dark' || theme === 'light') {
+                const html = document.documentElement || document.querySelector('html');
+                if (html) {
+                  html.setAttribute('data-theme', theme);
+                }
+              }
+            }
+
+            if (event.source === window.parent && event.data.type === 'llmReply') {
+              const requestId = event.data.requestId;
+              const handler = _llmRequestHandlers[requestId];
+              if (handler !== undefined) {
+                handler(event.data.payload);
+                delete _llmRequestHandlers[requestId];
+              }
+            }
+          });
+
+          
+        })();
+      </script>
+    
+      <script nonce="">
+        (function() {
+          var _appDataCfg = { apiBase: "https://copilot.microsoft.com/c/api", appId: "rEwnSGpi12bFtqmooUH7X" };
+
+          var _reqCounter = 0;
+          var _pendingRequests = {};
+
+          function _appDataRequest(method, path, body) {
+            if (!_appDataCfg) {
+              return Promise.reject(new Error('AppSDK: not configured for this artifact type.'));
+            }
+            var requestId = 'adr-' + (++_reqCounter);
+            var fullPath = _appDataCfg.appId + '/' + path;
+
+            return new Promise(function(resolve, reject) {
+              var timeoutId = setTimeout(function() {
+                delete _pendingRequests[requestId];
+                reject(new Error('AppSDK: request timed out'));
+              }, 30000);
+
+              _pendingRequests[requestId] = { resolve: resolve, reject: reject, timeoutId: timeoutId };
+
+              var requestMsg = {
+                type: 'app-data:request',
+                timestamp: Date.now(),
+                payload: { method: method, path: fullPath, body: body, requestId: requestId }
+              };
+              window.parent.postMessage(requestMsg, '*');
+            });
+          }
+
+          window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'app-data:response') {
+              var payload = event.data.payload;
+              var pending = _pendingRequests[payload.requestId];
+              if (pending) {
+                clearTimeout(pending.timeoutId);
+                delete _pendingRequests[payload.requestId];
+                if (payload.ok) {
+                  pending.resolve(payload.data !== undefined ? payload.data : null);
+                } else {
+                  pending.reject(new Error(payload.error || 'Request failed'));
+                }
+              }
+            }
+          });
+
+          window.AppSDK = {
+            upsert: function(entityId, entityType, data) {
+              return _appDataRequest('PUT', entityId + '/' + entityType, { data: data });
+            },
+            get: function(entityId, entityType) {
+              return _appDataRequest('GET', entityId + '/' + entityType);
+            },
+            list: function(entityId) {
+              return _appDataRequest('GET', entityId);
+            },
+            delete: function(entityId, entityType) {
+              return _appDataRequest('DELETE', entityId + '/' + entityType);
+            },
+            deleteAll: function() {
+              return _appDataRequest('DELETE', '');
+            }
+          };
+        })();
+      </script>
+      
+      <script nonce="">
+        (function() {
+          var _aiReqCounter = 0;
+          var _aiPendingRequests = {};
+
+          // Per-method timeouts (ms). Image generation can take longer than chat/TTS.
+          var _aiTimeouts = { chat: 30000, generateImage: 60000, speak: 30000 };
+
+          function _appAiRequest(method, fields) {
+            var requestId = 'aai-' + (++_aiReqCounter);
+            var timeoutMs = _aiTimeouts[method] || 30000;
+
+            return new Promise(function(resolve, reject) {
+              var timeoutId = setTimeout(function() {
+                delete _aiPendingRequests[requestId];
+                reject(new Error('AppSDK.ai: request timed out'));
+              }, timeoutMs);
+
+              _aiPendingRequests[requestId] = { method: method, resolve: resolve, reject: reject, timeoutId: timeoutId };
+
+              var payload = { requestId: requestId, method: method };
+              for (var key in fields) {
+                if (Object.prototype.hasOwnProperty.call(fields, key)) {
+                  payload[key] = fields[key];
+                }
+              }
+
+              var requestMsg = {
+                type: 'app-ai:request',
+                timestamp: Date.now(),
+                payload: payload
+              };
+              window.parent.postMessage(requestMsg, '*');
+            });
+          }
+
+          window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'app-ai:response') {
+              var payload = event.data.payload;
+              var pending = _aiPendingRequests[payload.requestId];
+              if (pending) {
+                clearTimeout(pending.timeoutId);
+                delete _aiPendingRequests[payload.requestId];
+                if (payload.ok) {
+                  if (pending.method === 'generateImage') {
+                    pending.resolve({ image: payload.image, format: payload.format });
+                  } else if (pending.method === 'speak') {
+                    pending.resolve({ audio: payload.audio, format: payload.format });
+                  } else {
+                    pending.resolve({ content: payload.content });
+                  }
+                } else {
+                  pending.reject(new Error(payload.error || 'AI request failed'));
+                }
+              }
+            }
+          });
+
+          // Attach to existing AppSDK or create it
+          window.AppSDK = window.AppSDK || {};
+          window.AppSDK.ai = {
+            chat: function(request) {
+              if (!request || !Array.isArray(request.messages) || request.messages.length === 0) {
+                return Promise.reject(new Error('AppSDK.ai: messages array is required'));
+              }
+              return _appAiRequest('chat', { messages: request.messages });
+            },
+            generateImage: function(request) {
+              if (!request || typeof request.prompt !== 'string' || request.prompt.length === 0) {
+                return Promise.reject(new Error('AppSDK.ai: prompt is required'));
+              }
+              var fields = { prompt: request.prompt };
+              if (request.aspectRatio) fields.aspectRatio = request.aspectRatio;
+              if (request.quality) fields.quality = request.quality;
+              return _appAiRequest('generateImage', fields);
+            },
+            speak: function(request) {
+              if (!request || typeof request.text !== 'string' || request.text.length === 0) {
+                return Promise.reject(new Error('AppSDK.ai: text is required'));
+              }
+              var fields = { text: request.text };
+              if (request.voice) fields.voice = request.voice;
+              if (request.audioFormat) fields.audioFormat = request.audioFormat;
+              return _appAiRequest('speak', fields);
+            }
+          };
+        })();
+      </script>
+      
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IHOP 4478 — September 2026 Server Performance</title>
+    <script nonce="" src="https://cdn.tailwindcss.com"></script>
+    <script nonce="" src="https://unpkg.com/lucide@latest" defer=""></script>
+    <script nonce="">
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              ihop: {
+                blue: '#0057A0',
+                red: '#E41E2B',
+                gold: '#FFD700',
+                silver: '#C0C0C0',
+                light: '#F5F5F5',
+                dark: '#1A1A1A',
+              },
+            },
+            fontFamily: {
+              sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html { scroll-behavior: smooth; }
+      body { background: #F5F5F5; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+      .app-wrap { max-width: 480px; margin: 0 auto; padding-bottom: 2rem; }
+      .sticky-header { position: sticky; top: 0; z-index: 50; background: #0057A0; padding: 14px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+      .stat-pill { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 10px 8px; text-align: center; flex: 1; min-width: 0; }
+      .stat-pill-val { font-size: 1.1rem; font-weight: 800; color: #fff; line-height: 1.2; }
+      .stat-pill-label { font-size: 0.6rem; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; font-weight: 600; }
+      .stat-pill-name { font-size: 0.65rem; color: #FFD700; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .tier-pill { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; white-space: nowrap; gap: 3px; }
+      .card { background: #fff; border-radius: 12px; margin: 0 12px 10px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+      .card-tier1 { border-left: 6px solid #FFD700; }
+      .card-tier2 { border-left: 6px solid #C0C0C0; }
+      .card-tier3 { border-left: 6px solid #0057A0; }
+      .card-tier4 { border-left: 6px solid #E41E2B; }
+      .score-bar-bg { background: #F0F0F0; border-radius: 6px; height: 10px; overflow: hidden; width: 100%; }
+      .score-bar-fill { height: 100%; border-radius: 6px; transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); width: 0; }
+      .mini-stat { flex: 1; text-align: center; padding: 6px 2px; min-width: 0; }
+      .mini-stat-val { font-size: 0.8rem; font-weight: 700; color: #1A1A1A; }
+      .mini-stat-label { font-size: 0.55rem; color: #888; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+      .mini-stat-ind { font-size: 0.65rem; font-weight: 600; margin-top: 1px; }
+      .filter-btn { padding: 10px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; min-height: 44px; min-width: 80px; cursor: pointer; transition: all 0.2s; border: 2px solid #0057A0; background: #fff; color: #0057A0; }
+      .filter-btn.active { background: #0057A0; color: #fff; }
+      .section-title { font-size: 1.1rem; font-weight: 800; color: #0057A0; padding: 16px 16px 4px 16px; }
+      .section-title::after { content: ''; display: block; width: 40px; height: 3px; background: #E41E2B; border-radius: 2px; margin-top: 4px; }
+      .sales-row { display: flex; align-items: center; padding: 6px 0; gap: 8px; }
+      .sales-name { font-size: 0.72rem; font-weight: 600; color: #1A1A1A; width: 90px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .sales-bar-wrap { flex: 1; height: 18px; background: #EDEDED; border-radius: 4px; overflow: hidden; position: relative; }
+      .sales-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+      .sales-amt { font-size: 0.72rem; font-weight: 700; color: #1A1A1A; width: 68px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+      .sales-change { font-size: 0.6rem; font-weight: 700; width: 36px; text-align: center; flex-shrink: 0; }
+      .vacant-card { background: linear-gradient(135deg, #f8f8f8, #f0f0f0); border: 2px dashed #C0C0C0; border-radius: 12px; margin: 0 12px 10px 12px; padding: 14px 16px; text-align: center; }
+      .tier-note { margin: 0 12px 16px 12px; padding: 10px 14px; background: #FFF9E6; border-radius: 10px; font-size: 0.7rem; color: #856300; font-weight: 500; text-align: center; border: 1px solid #FFE8A0; }
+      @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+      .card { animation: fadeInUp 0.4s ease both; }
+      .download-bar { background: #E41E2B; margin: 0; padding: 10px 16px; text-align: center; cursor: pointer; transition: background 0.2s; }
+      .download-bar:hover { background: #c8171f; }
+      .download-bar:active { background: #a8131a; }
+      .fab-download { position: fixed; bottom: 24px; right: 24px; z-index: 100; background: #E41E2B; color: #fff; border: none; border-radius: 28px; padding: 0 22px; height: 56px; min-width: 56px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(228, 30, 43, 0.45), 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.2s, box-shadow 0.2s, background 0.2s; }
+      .fab-download:hover { background: #c8171f; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(228, 30, 43, 0.55), 0 3px 8px rgba(0,0,0,0.25); }
+      .fab-download:active { transform: translateY(0); background: #a8131a; }
+    </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}</style></head>
+<body data-id="0">
+    <app-icon data-id="1" hidden="" data-icon="bar-chart-3" data-palette="Blue" data-selection-initialized="true"></app-icon>
+    <div data-id="2" class="app-wrap" data-selection-initialized="true">
+
+        <!-- STICKY HEADER -->
+        <div data-id="3" class="sticky-header" data-selection-initialized="true">
+            <div data-id="4" style="display:flex;align-items:center;gap:8px;" data-selection-initialized="true">
+                <span data-id="5" style="font-size:1.5rem;" data-selection-initialized="true">🥞</span>
+                <div data-id="6" data-selection-initialized="true">
+                    <div data-id="7" style="font-size:1.05rem;font-weight:800;color:#fff;letter-spacing:0.3px;" data-selection-initialized="true">IHOP #4478</div>
+                    <div data-id="8" style="font-size:0.7rem;color:rgba(255,255,255,0.8);font-weight:500;" data-selection-initialized="true">September 2026 · Server Performance</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOWNLOAD BAR (below sticky header) -->
+        <div data-id="9" class="download-bar" id="download-bar" data-selection-initialized="true">
+            <span data-id="10" style="font-size:0.95rem;font-weight:700;color:#fff;display:inline-flex;align-items:center;gap:6px;" data-selection-initialized="true">⬇️ Download to Share on Telegram</span>
+        </div>
+
+        <!-- TEAM SNAPSHOT -->
+        <div data-id="11" style="background:linear-gradient(135deg,#0057A0,#003d73);margin:0;padding:14px 12px 14px 12px;" data-selection-initialized="true">
+            <div data-id="12" style="display:flex;gap:6px;" data-selection-initialized="true">
+                <div data-id="13" class="stat-pill" data-selection-initialized="true">
+                    <div data-id="14" style="font-size:0.75rem;" data-selection-initialized="true">🏆</div>
+                    <div data-id="15" class="stat-pill-val" data-selection-initialized="true">100.00</div>
+                    <div data-id="16" class="stat-pill-label" data-selection-initialized="true">Top Score</div>
+                    <div data-id="17" class="stat-pill-name" data-selection-initialized="true">Maria Jason</div>
+                </div>
+                <div data-id="18" class="stat-pill" data-selection-initialized="true">
+                    <div data-id="19" style="font-size:0.75rem;" data-selection-initialized="true">⬆️</div>
+                    <div data-id="20" class="stat-pill-val" data-selection-initialized="true">+1.44</div>
+                    <div data-id="21" class="stat-pill-label" data-selection-initialized="true">Most Improved</div>
+                    <div data-id="22" class="stat-pill-name" data-selection-initialized="true">Kimberly Woods</div>
+                </div>
+                <div data-id="23" class="stat-pill" data-selection-initialized="true">
+                    <div data-id="24" style="font-size:0.75rem;" data-selection-initialized="true">💰</div>
+                    <div data-id="25" class="stat-pill-val" data-selection-initialized="true">$14,460</div>
+                    <div data-id="26" class="stat-pill-label" data-selection-initialized="true">Top Sales</div>
+                    <div data-id="27" class="stat-pill-name" data-selection-initialized="true">Misty Acosta</div>
+                </div>
+                <div data-id="28" class="stat-pill" data-selection-initialized="true">
+                    <div data-id="29" style="font-size:0.75rem;" data-selection-initialized="true">👥</div>
+                    <div data-id="30" class="stat-pill-val" data-selection-initialized="true">17</div>
+                    <div data-id="31" class="stat-pill-label" data-selection-initialized="true">Active Servers</div>
+                    <div data-id="32" class="stat-pill-name" data-selection-initialized="true">&nbsp;</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TIER LEGEND -->
+        <div data-id="33" style="padding:12px 12px 4px 12px;" data-selection-initialized="true">
+            <div data-id="34" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;" data-selection-initialized="true">
+                <span data-id="35" class="tier-pill" style="background:#FFF8DC;color:#8B6914;border:1px solid #FFD700;" data-selection-initialized="true">🥇 Gold Star</span>
+                <span data-id="36" class="tier-pill" style="background:#F0F0F0;color:#666;border:1px solid #C0C0C0;" data-selection-initialized="true">🥈 Silver — VACANT</span>
+                <span data-id="37" class="tier-pill" style="background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;" data-selection-initialized="true">✅ Standard</span>
+                <span data-id="38" class="tier-pill" style="background:#FDECEA;color:#E41E2B;border:1px solid #F5B7B1;" data-selection-initialized="true">📈 Development</span>
+            </div>
+            <div data-id="39" style="text-align:center;margin-top:6px;" data-selection-initialized="true">
+                <div data-id="40" style="font-size:0.55rem;color:#999;line-height:1.4;" data-selection-initialized="true">
+                    Gold: Score ≥95 + Disc &lt;3.5% + Time &lt;46 min &nbsp;·&nbsp; Silver: Score ≥88 + Disc &lt;3.5% + Time &lt;46 min<br data-id="41" data-selection-initialized="true">
+                    Standard: Score ≥78 &nbsp;·&nbsp; Development: Score &lt;78
+                </div>
+            </div>
+        </div>
+
+        <!-- SHIFT FILTER -->
+        <div data-id="42" style="display:flex;gap:8px;justify-content:center;padding:10px 16px 6px 16px;" data-selection-initialized="true">
+            <button data-id="43" class="filter-btn active" data-filter="ALL" data-selection-initialized="true">ALL</button>
+            <button data-id="44" class="filter-btn" data-filter="AM" data-selection-initialized="true">AM</button>
+            <button data-id="45" class="filter-btn" data-filter="PM" data-selection-initialized="true">PM</button>
+        </div>
+
+        <!-- KPI SECTION TITLE -->
+        <div data-id="46" class="section-title" data-selection-initialized="true">📊 KPI Rankings</div>
+
+        <!-- SERVER CARDS CONTAINER -->
+        <div data-id="47" id="cards-container" data-selection-initialized="true"><div class="card card-tier1 server-card" data-shift="AM" style="animation-delay: 0s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#FFD700;line-height:1;">#1</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#FFF8DC;color:#8B6914;border:1px solid #FFD700;">🥇 Gold Star</span>
+                        </div>
+                        <div><span style="color:#999;font-weight:700;font-size:0.8rem;">= 0.00</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Maria Jason</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#FFF3CD;color:#856404;">AM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">100.00</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="100" style="background: rgb(255, 215, 0); width: 100%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">100%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">19.00%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">1.10%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">38.1 min</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Fast</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$21.21</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Top</div>
+                    </div>
+                </div>
+            </div><div class="vacant-card server-card" data-shift="ALL"><div style="display:flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:1.1rem;">🥈</span><span style="font-size:0.85rem;font-weight:700;color:#999;">Silver Tier — VACANT</span></div><div style="font-size:0.6rem;color:#bbb;margin-top:3px;">No server qualified this month</div></div><div class="card card-tier3 server-card" data-shift="AM" style="animation-delay: 0.05s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#2</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#16A34A;font-weight:700;font-size:0.8rem;">↑ +1.39</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Gregory Duoos</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#FFF3CD;color:#856404;">AM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">99.73</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="99.73" style="background: rgb(0, 87, 160); width: 99.73%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">100%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">18.91%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">3.15%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">46.6 min</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Slow</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.59</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Top</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="AM" style="animation-delay: 0.1s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#3</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ -0.20</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Misty Acosta</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#FFF3CD;color:#856404;">AM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">97.19</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="97.19" style="background: rgb(0, 87, 160); width: 97.19%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">97%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">18.42%</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Close</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">3.68%</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Watch</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">48.7 min</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Slow</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.05</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Close</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="AM" style="animation-delay: 0.15s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#4</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ -0.87</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Carla Dunham</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#FFF3CD;color:#856404;">AM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">96.75</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="96.75" style="background: rgb(0, 87, 160); width: 96.75%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">97%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">19.80%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">2.32%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">54.8 min</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Over</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.31</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Close</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="AM" style="animation-delay: 0.2s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#5</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ -0.79</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Harlie Warner</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#FFF3CD;color:#856404;">AM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">96.13</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="96.13" style="background: rgb(0, 87, 160); width: 96.13%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">96%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">17.20%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Below</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">3.65%</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Watch</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">45.6 min</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Fast</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$20.22</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Top</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="AM" style="animation-delay: 0.25s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#6</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#16A34A;font-weight:700;font-size:0.8rem;">↑ +1.45</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Kimberly Woods</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#FFF3CD;color:#856404;">AM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">95.41</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="95.41" style="background: rgb(0, 87, 160); width: 95.41%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">95%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">17.06%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Below</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">1.82%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">49.1 min</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Slow</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.10</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Close</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="AM" style="animation-delay: 0.3s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#7</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ -3.61</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Shaniyah Anderson</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#FFF3CD;color:#856404;">AM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">92.78</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="92.78" style="background: rgb(0, 87, 160); width: 92.78%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">93%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">16.64%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Below</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">0.39%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">54.1 min</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Over</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.11</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Close</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="PM" style="animation-delay: 0.35s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#8</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ -7.43</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Genesis Perez</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#D6E4FF;color:#0057A0;">PM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">92.57</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="92.57" style="background: rgb(0, 87, 160); width: 92.57%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">93%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">14.32%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Below</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">2.67%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">47.9 min</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Slow</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$18.97</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Close</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="AM" style="animation-delay: 0.4s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#9</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ -1.52</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Trelana Aubert</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#FFF3CD;color:#856404;">AM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">91.05</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="91.05" style="background: rgb(0, 87, 160); width: 91.05%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">91%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">18.53%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">4.27%</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Watch</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">55.5 min</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Over</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.54</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Top</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="PM" style="animation-delay: 0.45s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#10</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ -4.18</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Christopher Ross</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#D6E4FF;color:#0057A0;">PM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">90.90</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="90.9" style="background: rgb(0, 87, 160); width: 90.9%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">91%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">15.24%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Below</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">2.44%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">60.6 min</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Over</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.19</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Close</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="PM" style="animation-delay: 0.5s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#11</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ -8.99</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Kayleigh Allen</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#D6E4FF;color:#0057A0;">PM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">85.83</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="85.83" style="background: rgb(0, 87, 160); width: 85.83%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">86%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">19.01%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">5.20%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ High</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">51.2 min</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Over</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$20.77</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Top</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="PM" style="animation-delay: 0.55s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#12</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#16A34A;font-weight:700;font-size:0.8rem;">↑ +0.30</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Kerri Bodin</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#D6E4FF;color:#0057A0;">PM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">84.15</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="84.15" style="background: rgb(0, 87, 160); width: 84.15%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">84%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">17.66%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">5.61%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ High</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">40.7 min</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Fast</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$18.34</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Low</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="PM" style="animation-delay: 0.6s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#13</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ -16.93</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Kiante Dunn</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#D6E4FF;color:#0057A0;">PM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">83.07</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="83.07" style="background: rgb(0, 87, 160); width: 83.07%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">83%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">17.74%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">5.49%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ High</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">52.6 min</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Over</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.07</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Close</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier3 server-card" data-shift="PM" style="animation-delay: 0.65s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#0057A0;line-height:1;">#14</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#E8F0FE;color:#0057A0;border:1px solid #B0CFF0;">✅ Standard</span>
+                        </div>
+                        <div><span style="color:#16A34A;font-weight:700;font-size:0.8rem;">↑ +1.14</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Rachel Authement</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#D6E4FF;color:#0057A0;">PM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">79.07</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="79.07" style="background: rgb(0, 87, 160); width: 79.07%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">79%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">14.57%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Below</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">5.63%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ High</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">39.5 min</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Fast</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.67</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Top</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier4 server-card" data-shift="AM" style="animation-delay: 0.7s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#E41E2B;line-height:1;">#15</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#FDECEA;color:#E41E2B;border:1px solid #F5B7B1;">📈 Development</span>
+                        </div>
+                        <div><span style="background:#E8E8E8;color:#888;padding:2px 8px;border-radius:6px;font-size:0.65rem;font-weight:700;">NEW</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Sarah Henderson</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#FFF3CD;color:#856404;">AM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">75.58</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="75.58" style="background: rgb(228, 30, 43); width: 75.58%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">76%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">13.40%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Below</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">5.30%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ High</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">47.3 min</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Slow</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.98</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Top</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier4 server-card" data-shift="PM" style="animation-delay: 0.75s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#E41E2B;line-height:1;">#16</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#FDECEA;color:#E41E2B;border:1px solid #F5B7B1;">📈 Development</span>
+                        </div>
+                        <div><span style="background:#E8E8E8;color:#888;padding:2px 8px;border-radius:6px;font-size:0.65rem;font-weight:700;">NEW</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Rasheta Mullen</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#D6E4FF;color:#0057A0;">PM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">73.17</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="73.17" style="background: rgb(228, 30, 43); width: 73.17%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">73%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">20.99%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">17.26%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ High</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">50.0 min</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Slow</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$19.05</div>
+                        <div class="mini-stat-ind" style="color:#D97706;">⚠️ Close</div>
+                    </div>
+                </div>
+            </div><div class="card card-tier4 server-card" data-shift="PM" style="animation-delay: 0.8s;">
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:#E41E2B;line-height:1;">#17</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:#FDECEA;color:#E41E2B;border:1px solid #F5B7B1;">📈 Development</span>
+                        </div>
+                        <div><span style="background:#E8E8E8;color:#888;padding:2px 8px;border-radius:6px;font-size:0.65rem;font-weight:700;">NEW</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">Porche Warren</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:#D6E4FF;color:#0057A0;">PM</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">71.31</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="71.31" style="background: rgb(228, 30, 43); width: 71.31%;"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">71%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">17.17%</div>
+                        <div class="mini-stat-ind" style="color:#16A34A;">✅ Great</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">7.50%</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ High</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">51.7 min</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Over</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">$17.45</div>
+                        <div class="mini-stat-ind" style="color:#E41E2B;">❌ Low</div>
+                    </div>
+                </div>
+            </div></div>
+
+        <!-- VACANT SILVER NOTICE + TIER NOTE rendered by JS -->
+        <div data-id="48" id="tier-note-container" data-selection-initialized="true"><div class="tier-note">🥈 Tier 2 (Silver) is vacant — no server met all three qualifying conditions this month.</div></div>
+
+        <!-- NET SALES SECTION -->
+        <div data-id="49" class="section-title" style="margin-top:8px;" data-selection-initialized="true">💰 September Net Sales</div>
+        <div data-id="50" style="padding:0 12px 4px 12px;" data-selection-initialized="true">
+            <div data-id="51" style="font-size:0.65rem;color:#888;font-weight:500;" data-selection-initialized="true">Recognition only — does not affect KPI scores</div>
+        </div>
+        <div data-id="52" class="card" style="margin:0 12px 10px 12px;padding:12px 14px;" data-selection-initialized="true">
+            <div data-id="53" id="sales-container" data-selection-initialized="true"><div class="sales-row">
+                <div class="sales-name">Misty Acosta</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:100%;background:#FFD700;"></div>
+                </div>
+                <div class="sales-amt">$14,460.49</div>
+                <span class="sales-change" style="color:#16A34A;">↑</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Carla Dunham</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:96.66989154586048%;background:#0057A0;"></div>
+                </div>
+                <div class="sales-amt">$13,978.94</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Kiante Dunn</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:55.125102952942804%;background:#0057A0;"></div>
+                </div>
+                <div class="sales-amt">$7,971.36</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Kimberly Woods</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:50.31924920939746%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$7,276.41</div>
+                <span class="sales-change" style="color:#16A34A;">↑</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Gregory Duoos</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:45.79720327596091%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$6,622.50</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Christopher Ross</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:42.463637124329814%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$6,140.45</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Maria Jason</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:39.75031274873812%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$5,748.09</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Rachel Authement</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:33.736408655584974%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$4,878.45</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Trelana Aubert</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:32.828071524547234%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$4,747.10</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Harlie Warner</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:19.576030964372578%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$2,830.79</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Genesis Perez</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:16.91927451974311%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$2,446.61</div>
+                <span class="sales-change" style="color:#16A34A;">↑</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Shaniyah Anderson</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:15.85672408058095%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$2,292.96</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Porche Warren</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:11.704444316893827%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$1,692.52</div>
+                <span class="sales-change" style="color:#888;font-size:0.55rem;background:#E8E8E8;padding:1px 4px;border-radius:4px;font-weight:700;">NEW</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Kerri Bodin</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:11.413444496002557%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$1,650.44</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Kayleigh Allen</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:9.911351551710904%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$1,433.23</div>
+                <span class="sales-change" style="color:#E41E2B;">↓</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Rasheta Mullen</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:6.190246665223655%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$895.14</div>
+                <span class="sales-change" style="color:#888;font-size:0.55rem;background:#E8E8E8;padding:1px 4px;border-radius:4px;font-weight:700;">NEW</span>
+            </div><div class="sales-row">
+                <div class="sales-name">Sarah Henderson</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:2.3488139060294637%;background:#7EAAD4;"></div>
+                </div>
+                <div class="sales-amt">$339.65</div>
+                <span class="sales-change" style="color:#888;font-size:0.55rem;background:#E8E8E8;padding:1px 4px;border-radius:4px;font-weight:700;">NEW</span>
+            </div></div>
+            <div data-id="54" style="border-top:2px solid #F0F0F0;margin-top:8px;padding-top:8px;" data-selection-initialized="true">
+                <div data-id="55" class="sales-row" style="padding:2px 0;" data-selection-initialized="true">
+                    <div data-id="56" class="sales-name" style="font-weight:800;color:#0057A0;" data-selection-initialized="true">TEAM TOTAL</div>
+                    <div data-id="57" style="flex:1;display:flex;gap:8px;align-items:center;" data-selection-initialized="true">
+                        <div data-id="58" style="font-size:0.65rem;color:#888;font-weight:600;" data-selection-initialized="true">Aug: $100,258.61</div>
+                        <div data-id="59" style="font-size:0.65rem;color:#888;" data-selection-initialized="true">→</div>
+                        <div data-id="60" style="font-size:0.8rem;font-weight:800;color:#1A1A1A;" data-selection-initialized="true">Sep: $85,405.13</div>
+                        <span data-id="61" class="sales-change" style="color:#E41E2B;" data-selection-initialized="true">↓</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer data-id="62" style="text-align:center;padding:20px 16px 12px 16px;" data-selection-initialized="true">
+            <div data-id="63" style="font-size:0.7rem;color:#999;font-weight:600;" data-selection-initialized="true">IHOP #4478 · Baton Rouge, LA · October 2026</div>
+            <div data-id="64" style="font-size:0.6rem;color:#bbb;margin-top:4px;" data-selection-initialized="true">Scores: Beverages 40% · Discounts 25% · Time 20% · PPA 15%</div>
+            <p data-id="65" style="font-size:0.6rem;color:#ccc;margin-top:10px;" data-selection-initialized="true">Made by Copilot</p>
+        </footer>
+    </div>
+
+    <!-- FLOATING DOWNLOAD BUTTON -->
+    <button data-id="66" class="fab-download" id="fab-download" data-selection-initialized="true">
+        <span data-id="67" style="font-size:1.2rem;" data-selection-initialized="true">⬇️</span>
+        <span data-id="68" data-selection-initialized="true">Download Report</span>
+    </button>
+
+    <script nonce="">
+    // Guard Lucide
+    if (typeof lucide !== "undefined" && typeof lucide.createIcons === "function") {
+        lucide.createIcons();
+    }
+
+    // Download function
+    function downloadReport() {
+        var html = document.documentElement.outerHTML;
+        var fullHTML = '<!DOCTYPE html>\n' + html;
+        var blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'IHOP4478_Sep2026.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    // Attach download events
+    document.getElementById('fab-download').addEventListener('click', downloadReport);
+    document.getElementById('download-bar').addEventListener('click', downloadReport);
+
+    const servers = [
+      { rank:1,  name:"Jason, Maria",        shift:"AM", bev:19.00, disc:1.10,  mins:38.10, ppa:21.21, accts:129, sep:100.00, aug:100.00, tier:1 },
+      { rank:2,  name:"Duoos, Gregory",       shift:"AM", bev:18.91, disc:3.15,  mins:46.64, ppa:19.59, accts:157, sep:99.73,  aug:98.34,  tier:3 },
+      { rank:3,  name:"Acosta, Misty",        shift:"AM", bev:18.42, disc:3.68,  mins:48.73, ppa:19.05, accts:333, sep:97.19,  aug:97.39,  tier:3 },
+      { rank:4,  name:"Dunham, Carla",        shift:"AM", bev:19.80, disc:2.32,  mins:54.80, ppa:19.31, accts:300, sep:96.75,  aug:97.62,  tier:3 },
+      { rank:5,  name:"Warner, Harlie",       shift:"AM", bev:17.20, disc:3.65,  mins:45.61, ppa:20.22, accts:59,  sep:96.13,  aug:96.92,  tier:3 },
+      { rank:6,  name:"Woods, Kimberly",      shift:"AM", bev:17.06, disc:1.82,  mins:49.11, ppa:19.10, accts:168, sep:95.41,  aug:93.96,  tier:3 },
+      { rank:7,  name:"Anderson, Shaniyah",   shift:"AM", bev:16.64, disc:0.39,  mins:54.15, ppa:19.11, accts:33,  sep:92.78,  aug:96.39,  tier:3 },
+      { rank:8,  name:"Perez, Genesis",       shift:"PM", bev:14.32, disc:2.67,  mins:47.93, ppa:18.97, accts:41,  sep:92.57,  aug:100.00, tier:3 },
+      { rank:9,  name:"Aubert, Trelana",      shift:"AM", bev:18.53, disc:4.27,  mins:55.49, ppa:19.54, accts:99,  sep:91.05,  aug:92.57,  tier:3 },
+      { rank:10, name:"Ross, Christopher",    shift:"PM", bev:15.24, disc:2.44,  mins:60.62, ppa:19.19, accts:94,  sep:90.90,  aug:95.08,  tier:3 },
+      { rank:11, name:"Allen, Kayleigh",      shift:"PM", bev:19.01, disc:5.20,  mins:51.20, ppa:20.77, accts:25,  sep:85.83,  aug:94.82,  tier:3 },
+      { rank:12, name:"Bodin, Kerri",         shift:"PM", bev:17.66, disc:5.61,  mins:40.67, ppa:18.34, accts:30,  sep:84.15,  aug:83.85,  tier:3 },
+      { rank:13, name:"Dunn, Kiante",         shift:"PM", bev:17.74, disc:5.49,  mins:52.62, ppa:19.07, accts:160, sep:83.07,  aug:100.00, tier:3 },
+      { rank:14, name:"Authement, Rachel",    shift:"PM", bev:14.57, disc:5.63,  mins:39.45, ppa:19.67, accts:77,  sep:79.07,  aug:77.93,  tier:3 },
+      { rank:15, name:"Henderson, Sarah",     shift:"AM", bev:13.40, disc:5.30,  mins:47.30, ppa:19.98, accts:10,  sep:75.58,  aug:null,   tier:4 },
+      { rank:16, name:"Mullen, Rasheta",      shift:"PM", bev:20.99, disc:17.26, mins:49.95, ppa:19.05, accts:20,  sep:73.17,  aug:null,   tier:4 },
+      { rank:17, name:"Warren, Porche",       shift:"PM", bev:17.17, disc:7.50,  mins:51.71, ppa:17.45, accts:28,  sep:71.31,  aug:null,   tier:4 }
+    ];
+
+    const salesData = [
+      { name:"Acosta, Misty",      augSales:13722.02, sepSales:14460.49 },
+      { name:"Dunham, Carla",      augSales:15282.99, sepSales:13978.94 },
+      { name:"Dunn, Kiante",       augSales:10402.20, sepSales:7971.36  },
+      { name:"Woods, Kimberly",    augSales:4900.53,  sepSales:7276.41  },
+      { name:"Duoos, Gregory",     augSales:6872.10,  sepSales:6622.50  },
+      { name:"Ross, Christopher",  augSales:6741.05,  sepSales:6140.45  },
+      { name:"Jason, Maria",       augSales:9452.14,  sepSales:5748.09  },
+      { name:"Authement, Rachel",  augSales:5392.06,  sepSales:4878.45  },
+      { name:"Aubert, Trelana",    augSales:5203.10,  sepSales:4747.10  },
+      { name:"Warner, Harlie",     augSales:4919.16,  sepSales:2830.79  },
+      { name:"Perez, Genesis",     augSales:2217.60,  sepSales:2446.61  },
+      { name:"Anderson, Shaniyah", augSales:4879.58,  sepSales:2292.96  },
+      { name:"Warren, Porche",     augSales:null,     sepSales:1692.52  },
+      { name:"Bodin, Kerri",       augSales:4057.28,  sepSales:1650.44  },
+      { name:"Allen, Kayleigh",    augSales:6216.80,  sepSales:1433.23  },
+      { name:"Mullen, Rasheta",    augSales:null,     sepSales:895.14   },
+      { name:"Henderson, Sarah",   augSales:null,     sepSales:339.65   }
+    ];
+
+    const PPA_REF = 19.361852;
+    const maxSales = 14460.49;
+
+    function formatName(raw) {
+        const parts = raw.split(', ');
+        if (parts.length === 2) return parts[1] + ' ' + parts[0];
+        return raw;
+    }
+
+    function fmtScore(v) { return v.toFixed(2); }
+    function fmtPct(v) { return v.toFixed(2) + '%'; }
+    function fmtMins(v) { return v.toFixed(1) + ' min'; }
+    function fmtMoney(v) { return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fmtMoneyShort(v) { return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+    function getBevIndicator(bev, shift) {
+        const goal = shift === 'AM' ? 18.5 : 17.0;
+        if (bev >= goal) return { icon: '✅', text: 'Great', color: '#16A34A' };
+        if (bev >= goal - 1) return { icon: '⚠️', text: 'Close', color: '#D97706' };
+        return { icon: '❌', text: 'Below', color: '#E41E2B' };
+    }
+    function getDiscIndicator(disc) {
+        if (disc < 3.5) return { icon: '✅', text: 'Great', color: '#16A34A' };
+        if (disc < 5) return { icon: '⚠️', text: 'Watch', color: '#D97706' };
+        return { icon: '❌', text: 'High', color: '#E41E2B' };
+    }
+    function getTimeIndicator(mins) {
+        if (mins < 46) return { icon: '✅', text: 'Fast', color: '#16A34A' };
+        if (mins <= 50) return { icon: '⚠️', text: 'Slow', color: '#D97706' };
+        return { icon: '❌', text: 'Over', color: '#E41E2B' };
+    }
+    function getPPAIndicator(ppa) {
+        if (ppa >= PPA_REF) return { icon: '✅', text: 'Top', color: '#16A34A' };
+        if (ppa >= PPA_REF * 0.95) return { icon: '⚠️', text: 'Close', color: '#D97706' };
+        return { icon: '❌', text: 'Low', color: '#E41E2B' };
+    }
+
+    function getTierBadge(tier) {
+        switch(tier) {
+            case 1: return { label: '🥇 Gold Star', bg: '#FFF8DC', color: '#8B6914', border: '#FFD700' };
+            case 2: return { label: '🥈 Silver', bg: '#F0F0F0', color: '#666', border: '#C0C0C0' };
+            case 3: return { label: '✅ Standard', bg: '#E8F0FE', color: '#0057A0', border: '#B0CFF0' };
+            case 4: return { label: '📈 Development', bg: '#FDECEA', color: '#E41E2B', border: '#F5B7B1' };
+        }
+    }
+
+    function getTierColor(tier) {
+        switch(tier) {
+            case 1: return '#FFD700';
+            case 2: return '#C0C0C0';
+            case 3: return '#0057A0';
+            case 4: return '#E41E2B';
+        }
+    }
+
+    function getChangeHTML(s) {
+        if (s.aug === null) return '<span style="background:#E8E8E8;color:#888;padding:2px 8px;border-radius:6px;font-size:0.65rem;font-weight:700;">NEW</span>';
+        const diff = s.sep - s.aug;
+        if (diff > 0) return '<span style="color:#16A34A;font-weight:700;font-size:0.8rem;">↑ +' + diff.toFixed(2) + '</span>';
+        if (diff < 0) return '<span style="color:#E41E2B;font-weight:700;font-size:0.8rem;">↓ ' + diff.toFixed(2) + '</span>';
+        return '<span style="color:#999;font-weight:700;font-size:0.8rem;">= 0.00</span>';
+    }
+
+    function renderCards(filter) {
+        const container = document.getElementById('cards-container');
+        container.innerHTML = '';
+        const filtered = servers.filter(s => filter === 'ALL' || s.shift === filter);
+        let vacantInserted = false;
+
+        filtered.forEach((s, idx) => {
+            const displayRank = idx + 1;
+            const tierBadge = getTierBadge(s.tier);
+            const tierColor = getTierColor(s.tier);
+            const cardClass = 'card card-tier' + s.tier;
+            const bevInd = getBevIndicator(s.bev, s.shift);
+            const discInd = getDiscIndicator(s.disc);
+            const timeInd = getTimeIndicator(s.mins);
+            const ppaInd = getPPAIndicator(s.ppa);
+
+            // Insert vacant silver card after tier 1 cards
+            if (!vacantInserted && s.tier >= 3) {
+                vacantInserted = true;
+                const vacantDiv = document.createElement('div');
+                vacantDiv.className = 'vacant-card server-card';
+                vacantDiv.setAttribute('data-shift', 'ALL');
+                vacantDiv.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:1.1rem;">🥈</span><span style="font-size:0.85rem;font-weight:700;color:#999;">Silver Tier — VACANT</span></div><div style="font-size:0.6rem;color:#bbb;margin-top:3px;">No server qualified this month</div>';
+                container.appendChild(vacantDiv);
+            }
+
+            const card = document.createElement('div');
+            card.className = cardClass + ' server-card';
+            card.setAttribute('data-shift', s.shift);
+            card.style.animationDelay = (idx * 0.05) + 's';
+
+            card.innerHTML = `
+                <div style="padding:10px 14px 0 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.3rem;font-weight:900;color:${tierColor};line-height:1;">#${displayRank}</span>
+                            <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.6rem;font-weight:700;background:${tierBadge.bg};color:${tierBadge.color};border:1px solid ${tierBadge.border};">${tierBadge.label}</span>
+                        </div>
+                        <div>${getChangeHTML(s)}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span style="font-size:0.95rem;font-weight:700;color:#1A1A1A;">${formatName(s.name)}</span>
+                        <span style="padding:2px 8px;border-radius:6px;font-size:0.6rem;font-weight:700;background:${s.shift==='AM'?'#FFF3CD':'#D6E4FF'};color:${s.shift==='AM'?'#856404':'#0057A0'};">${s.shift}</span>
+                    </div>
+                </div>
+                <div style="padding:8px 14px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:0.55rem;text-transform:uppercase;font-weight:700;color:#999;letter-spacing:0.5px;">Score</span>
+                        <span style="font-size:1.5rem;font-weight:900;color:#1A1A1A;font-variant-numeric:tabular-nums;">${fmtScore(s.sep)}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <div class="score-bar-bg" style="flex:1;">
+                            <div class="score-bar-fill" data-width="${s.sep}" style="background:${tierColor};"></div>
+                        </div>
+                        <span style="font-size:0.7rem;font-weight:700;color:#999;font-variant-numeric:tabular-nums;">${Math.round(s.sep)}%</span>
+                    </div>
+                </div>
+                <div style="display:flex;border-top:1px solid #F0F0F0;">
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Beverages</div>
+                        <div class="mini-stat-val">${fmtPct(s.bev)}</div>
+                        <div class="mini-stat-ind" style="color:${bevInd.color};">${bevInd.icon} ${bevInd.text}</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Discounts</div>
+                        <div class="mini-stat-val">${fmtPct(s.disc)}</div>
+                        <div class="mini-stat-ind" style="color:${discInd.color};">${discInd.icon} ${discInd.text}</div>
+                    </div>
+                    <div class="mini-stat" style="border-right:1px solid #F0F0F0;">
+                        <div class="mini-stat-label">Time</div>
+                        <div class="mini-stat-val">${fmtMins(s.mins)}</div>
+                        <div class="mini-stat-ind" style="color:${timeInd.color};">${timeInd.icon} ${timeInd.text}</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">PPA</div>
+                        <div class="mini-stat-val">${fmtMoney(s.ppa)}</div>
+                        <div class="mini-stat-ind" style="color:${ppaInd.color};">${ppaInd.icon} ${ppaInd.text}</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        // If no tier 1 found in filter (e.g., PM only), still show vacant if appropriate
+        if (!vacantInserted) {
+            const hasT1 = filtered.some(s => s.tier === 1);
+            if (!hasT1 && filtered.length > 0) {
+                const vacantDiv = document.createElement('div');
+                vacantDiv.className = 'vacant-card server-card';
+                vacantDiv.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:1.1rem;">🥈</span><span style="font-size:0.85rem;font-weight:700;color:#999;">Silver Tier — VACANT</span></div><div style="font-size:0.6rem;color:#bbb;margin-top:3px;">No server qualified this month</div>';
+                container.insertBefore(vacantDiv, container.firstChild);
+            }
+        }
+
+        // Tier note
+        const noteContainer = document.getElementById('tier-note-container');
+        noteContainer.innerHTML = '<div class="tier-note">🥈 Tier 2 (Silver) is vacant — no server met all three qualifying conditions this month.</div>';
+
+        // Animate score bars
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                document.querySelectorAll('.score-bar-fill').forEach(bar => {
+                    const w = bar.getAttribute('data-width');
+                    if (w) bar.style.width = w + '%';
+                });
+            }, 100);
+        });
+    }
+
+    function renderSales() {
+        const container = document.getElementById('sales-container');
+        container.innerHTML = '';
+        salesData.forEach((s, idx) => {
+            const pct = (s.sepSales / maxSales) * 100;
+            let changeHTML = '';
+            if (s.augSales === null) {
+                changeHTML = '<span class="sales-change" style="color:#888;font-size:0.55rem;background:#E8E8E8;padding:1px 4px;border-radius:4px;font-weight:700;">NEW</span>';
+            } else if (s.sepSales > s.augSales) {
+                changeHTML = '<span class="sales-change" style="color:#16A34A;">↑</span>';
+            } else {
+                changeHTML = '<span class="sales-change" style="color:#E41E2B;">↓</span>';
+            }
+
+            const barColor = idx === 0 ? '#FFD700' : (idx < 3 ? '#0057A0' : '#7EAAD4');
+
+            const row = document.createElement('div');
+            row.className = 'sales-row';
+            row.innerHTML = `
+                <div class="sales-name">${formatName(s.name)}</div>
+                <div class="sales-bar-wrap">
+                    <div class="sales-bar-fill" style="width:${pct}%;background:${barColor};"></div>
+                </div>
+                <div class="sales-amt">${fmtMoneyShort(s.sepSales)}</div>
+                ${changeHTML}
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    // Filter buttons
+    let currentFilter = 'ALL';
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.getAttribute('data-filter');
+            renderCards(currentFilter);
+        });
+    });
+
+    // Initial render
+    renderCards('ALL');
+    renderSales();
+    </script>
+<script nonce="">
+  var activeElement = null;
+  var selectionEnabled = false;
+  var selectableElements = [];
+  var SELECTABLE_SELECTOR = '[data-id]';
+  var SKIP_TAGS = {'HTML':1,'HEAD':1,'BODY':1,'SCRIPT':1,'STYLE':1,'LINK':1,'META':1,'PATH':1,'CIRCLE':1,'RECT':1,'POLYGON':1,'POLYLINE':1,'LINE':1,'ELLIPSE':1,'G':1,'DEFS':1,'CLIPPATH':1,'USE':1,'SYMBOL':1,'IFRAME':1,'CANVAS':1};
+  var INTERACTIVE_TAGS = {'INPUT':1,'TEXTAREA':1,'SELECT':1,'BUTTON':1,'A':1,'VIDEO':1,'AUDIO':1,'DETAILS':1,'SUMMARY':1};
+
+
+  function getSlotId(el) {
+    return el.getAttribute('data-id') || '';
+  }
+
+  function isImageElement(el) {
+    var tag = el.tagName.toUpperCase();
+    if (tag === 'IMG' || tag === 'SVG') return true;
+    var children = el.children;
+    for (var i = 0; i < children.length; i++) {
+      var childTag = children[i].tagName.toUpperCase();
+      if (childTag === 'IMG' || childTag === 'SVG') return true;
+    }
+    return false;
+  }
+
+  function isInteractiveElement(el) {
+    return INTERACTIVE_TAGS[el.tagName.toUpperCase()] === 1;
+  }
+
+  function hasInteractiveChild(el) {
+    var children = el.children;
+    for (var i = 0; i < children.length; i++) {
+      if (INTERACTIVE_TAGS[children[i].tagName.toUpperCase()] === 1) return true;
+    }
+    return false;
+  }
+
+  function isSelectableElement(el) {
+    var tag = el.tagName.toUpperCase();
+    if (SKIP_TAGS[tag]) return false;
+    // The backend curates which elements receive data-id, so any
+    // non-skipped element with that attribute is considered meaningful
+    // and should be selectable (text, images, interactive, or visual).
+    return true;
+  }
+
+  function deactivateElement() {
+    if (activeElement) {
+      activeElement.style.removeProperty('outline');
+      activeElement.style.removeProperty('outline-offset');
+      activeElement.style.removeProperty('border-radius');
+    }
+  }
+
+  function activateElement(el) {
+    activeElement = el;
+    el.style.setProperty('outline', '2.5px solid #987AEE', 'important');
+    el.style.setProperty('outline-offset', '2px', 'important');
+    el.style.setProperty('border-radius', '6px', 'important');
+  }
+
+  function getWrappingHtml(el) {
+    var current = el;
+    while (current && current !== document.body) {
+      var parent = current.parentElement;
+      if (parent && parent.hasAttribute('data-id') && parent !== el) {
+        return parent.outerHTML;
+      }
+      current = parent;
+    }
+    return el.outerHTML;
+  }
+
+  function getInteractiveValue(el) {
+    var tag = el.tagName.toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return el.value || el.placeholder || '';
+    if (tag === 'SELECT') return el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : '';
+    if (tag === 'A') return (el.textContent || '') + (el.href ? ' (' + el.href + ')' : '');
+    if (tag === 'VIDEO' || tag === 'AUDIO') return el.src || '';
+    return el.textContent || '';
+  }
+
+  function getElementType(el) {
+    if (isImageElement(el)) return 'image';
+    if (isInteractiveElement(el) || hasInteractiveChild(el)) return 'interactive';
+    return 'text';
+  }
+
+  function getElementValue(el) {
+    var elType = getElementType(el);
+    if (elType === 'image') return '';
+    if (isInteractiveElement(el)) return getInteractiveValue(el);
+    if (hasInteractiveChild(el)) {
+      var children = el.children;
+      for (var i = 0; i < children.length; i++) {
+        if (INTERACTIVE_TAGS[children[i].tagName.toUpperCase()] === 1) {
+          return getInteractiveValue(children[i]);
+        }
+      }
+    }
+    return el.textContent || '';
+  }
+
+  function getElementDescription(el) {
+    var text = (el.textContent || '').trim();
+    if (text) return text.length > 100 ? text.substring(0, 100) : text;
+    var img = el.tagName.toUpperCase() === 'IMG' ? el : el.querySelector('img');
+    if (img) {
+      var alt = img.getAttribute('alt');
+      if (alt && alt.trim()) return alt.trim();
+    }
+    var ariaLabel = el.getAttribute('aria-label');
+    if (ariaLabel && ariaLabel.trim()) return ariaLabel.trim();
+    var title = el.getAttribute('title');
+    if (title && title.trim()) return title.trim();
+    if (el.placeholder && el.placeholder.trim()) return el.placeholder.trim();
+    return '';
+  }
+
+  function notifyElementSelected(el, action) {
+    var rect = el.getBoundingClientRect();
+    var elementType = getElementType(el);
+    var value = getElementValue(el);
+    var description = getElementDescription(el);
+    var selectionHtml = getWrappingHtml(el);
+    var msg = {
+      type: 'element_selected',
+      slotId: getSlotId(el),
+      elementType: elementType,
+      value: value,
+      description: description,
+      selectionHtml: selectionHtml,
+      bounds: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
+    };
+    if (action) msg.action = action;
+    window.parent.postMessage(msg, '*');
+  }
+
+
+  function setupElement(el) {
+    if (el.dataset.selectionInitialized) return;
+    el.dataset.selectionInitialized = 'true';
+    if (selectionEnabled) el.style.cursor = 'pointer';
+
+    el.addEventListener('click', function(e) {
+      if (!selectionEnabled) return;
+      e.stopPropagation();
+      if (activeElement !== el) {
+        deactivateElement();
+        activateElement(el);
+      }
+      notifyElementSelected(el);
+    });
+
+    el.addEventListener('mouseenter', function() {
+      if (!selectionEnabled) return;
+      if (el !== activeElement) {
+        el.style.setProperty('outline', '1.5px solid rgba(59, 130, 246, 0.5)', 'important');
+        el.style.setProperty('outline-offset', '2px', 'important');
+        el.style.setProperty('border-radius', '6px', 'important');
+      }
+    });
+
+    el.addEventListener('mouseleave', function() {
+      if (!selectionEnabled) return;
+      if (el !== activeElement) {
+        el.style.removeProperty('outline');
+        el.style.removeProperty('outline-offset');
+        el.style.removeProperty('border-radius');
+      }
+    });
+  }
+
+  function initializeElements() {
+    var allElements = document.querySelectorAll(SELECTABLE_SELECTOR);
+    for (var i = 0; i < allElements.length; i++) {
+      if (isSelectableElement(allElements[i])) {
+        setupElement(allElements[i]);
+      }
+    }
+    rebuildSelectableList();
+  }
+
+  // Rebuild the cached list of keyboard-navigable elements.
+  // Called by initializeElements (at init + on DOM mutations).
+  function rebuildSelectableList() {
+    var all = document.querySelectorAll('[data-selection-initialized]');
+    var result = [];
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      var rect = el.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) continue;
+      var style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
+      result.push(el);
+    }
+    selectableElements = result;
+  }
+
+
+  function setupBodyListeners() {
+    if (!document.body) return;
+
+    // Capture-phase handler: block all native interactions (links, buttons, forms)
+    // when selection is enabled. Our element click handlers still fire normally.
+    document.addEventListener('click', function(e) {
+      if (selectionEnabled) {
+        e.preventDefault();
+      }
+    }, true);
+
+    document.body.addEventListener('click', function(e) {
+      if (!selectionEnabled) return;
+      var closestInitialized = e.target.closest('[data-selection-initialized]');
+      if (closestInitialized) return;
+
+      deactivateElement();
+      activeElement = null;
+      window.parent.postMessage({ type: 'element_deselected' }, '*');
+    });
+  }
+
+
+  window.addEventListener('message', function(e) {
+    var data = e.data;
+    if (data && data.type === 'slideCommand' && data.payload) {
+      data = { type: data.payload.command, ...data.payload.data };
+    }
+
+    if (data.type === 'clear_selection') {
+      deactivateElement();
+      activeElement = null;
+      window.parent.postMessage({ type: 'element_deselected' }, '*');
+      return;
+    }
+
+    if (data.type === 'enable_selection') {
+      selectionEnabled = true;
+      var allEls = document.querySelectorAll('[data-selection-initialized]');
+      for (var i = 0; i < allEls.length; i++) {
+        allEls[i].style.cursor = 'pointer';
+      }
+      return;
+    }
+
+    if (data.type === 'disable_selection') {
+      selectionEnabled = false;
+      deactivateElement();
+      activeElement = null;
+      var allEls2 = document.querySelectorAll('[data-selection-initialized]');
+      for (var j = 0; j < allEls2.length; j++) {
+        allEls2[j].style.cursor = '';
+      }
+      window.parent.postMessage({ type: 'element_deselected' }, '*');
+      return;
+    }
+  });
+
+
+  var isMouseDown = false;
+  document.addEventListener('mousedown', function() { isMouseDown = true; });
+  document.addEventListener('mouseup', function() { isMouseDown = false; });
+
+  // Auto-activate the first selectable element when iframe gains keyboard focus
+  // (skip if the focus came from a mouse click).
+  window.addEventListener('focus', function() {
+    if (isMouseDown) return;
+    if (!selectionEnabled) return;
+    if (!activeElement) {
+      if (selectableElements.length > 0) {
+        activateElement(selectableElements[0]);
+        notifyElementSelected(selectableElements[0]);
+      }
+    }
+  });
+
+  // Keyboard navigation: Tab cycles elements, Enter triggers Ask Copilot,
+  // Escape deselects.
+  document.addEventListener('keydown', function(e) {
+    if (!selectionEnabled) return;
+
+    if (e.key === 'Escape') {
+      if (activeElement) {
+        e.preventDefault();
+        deactivateElement();
+        activeElement = null;
+        window.parent.postMessage({ type: 'element_deselected' }, '*');
+      }
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      if (activeElement) {
+        e.preventDefault();
+        // Re-send element_selected with action so the parent triggers Ask Copilot
+        notifyElementSelected(activeElement, 'ask_copilot');
+      }
+      return;
+    }
+
+    if (e.key !== 'Tab') return;
+    e.preventDefault();
+
+    if (selectableElements.length === 0) return;
+
+    var currentIndex = activeElement ? selectableElements.indexOf(activeElement) : -1;
+    var nextIndex;
+    var atBoundary = false;
+
+    if (e.shiftKey) {
+      if (currentIndex <= 0) {
+        atBoundary = true;
+      } else {
+        nextIndex = currentIndex - 1;
+      }
+    } else {
+      if (currentIndex >= selectableElements.length - 1) {
+        atBoundary = true;
+      } else {
+        nextIndex = currentIndex + 1;
+      }
+    }
+
+    // At boundary: tell parent to move focus outside the iframe.
+    if (atBoundary) {
+      deactivateElement();
+      activeElement = null;
+      window.parent.postMessage({
+        type: 'tab_exit',
+        direction: e.shiftKey ? 'backward' : 'forward'
+      }, '*');
+      return;
+    }
+
+    deactivateElement();
+    activateElement(selectableElements[nextIndex]);
+    notifyElementSelected(selectableElements[nextIndex]);
+    selectableElements[nextIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeElements();
+      setupBodyListeners();
+    });
+  } else {
+    initializeElements();
+    setupBodyListeners();
+  }
+
+  var mutationTimer = null;
+  var observer = new MutationObserver(function() {
+    if (mutationTimer) return;
+    mutationTimer = setTimeout(function() {
+      mutationTimer = null;
+      initializeElements();
+    }, 200);
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+</script>
+</body></html>
