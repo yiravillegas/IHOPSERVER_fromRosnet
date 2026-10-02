@@ -1,0 +1,8 @@
+{
+  "location": "DEMO",
+  "roster": {"Server A": "AM", "Server B": "PM"},
+  "excluded": ["Staff, OLO"],
+  "targets": {"beverage_am": 0.185, "beverage_pm": 0.17, "discount": 0.035, "discount_zero": 0.07, "minutes": 46},
+  "weights": {"beverage": 0.4, "discount": 0.25, "minutes": 0.2, "ppa": 0.15},
+  "tiers": {"1": 95, "2": 88, "3": 78}
+}
